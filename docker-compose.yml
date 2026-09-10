@@ -118,6 +118,10 @@ services:
     image: 'mrcas/kapowarr:latest'
     container_name: kapowarr
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -133,6 +137,10 @@ services:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -147,6 +155,10 @@ services:
     image: ghcr.io/autobrr/autobrr:latest
     restart: unless-stopped
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
     environment:
       - TZ=${TZ}
       - PUID=${PUID}
@@ -185,6 +197,10 @@ services:
     image: alexfozor/flaresolverr:pr-1300-experimental
     container_name: flaresolverr
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
     environment:
       - LOG_LEVEL=info
       - LOG_HTML=false
@@ -201,6 +217,10 @@ services:
     image: lscr.io/linuxserver/qbittorrent:libtorrentv1
     container_name: qbittorrent
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -252,6 +272,10 @@ services:
     image: lscr.io/linuxserver/bazarr:latest
     restart: unless-stopped
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -267,6 +291,10 @@ services:
     image: ghcr.io/cross-seed/cross-seed:latest
     container_name: cross-seed
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
     user: ${PUID}:${PGID}
     restart: unless-stopped
     environment:
@@ -353,6 +381,10 @@ services:
     image: ghcr.io/dispatcharr/dispatcharr:latest
     container_name: dispatcharr
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
     volumes:
       - ${BASE_PATH}/dispatcharr/data:/data
     environment:
