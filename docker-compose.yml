@@ -407,6 +407,12 @@ services:
       
   gluetun:
     image: qmcgaw/gluetun:v3
+    healthcheck:
+      test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
+      interval: 5s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
     container_name: gluetun
     cap_add:
       - NET_ADMIN
