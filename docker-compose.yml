@@ -303,7 +303,7 @@ services:
       - 8694:8694/tcp # qBit
       - 8191:8191/tcp # byparr
       - 9696:9696/tcp # prowlarr
-      - 8085:8080/tcp # SABnzbd (Host-Port 8085, da 8080 schon qBit gehoert - siehe Hinweis unten)
+      - 8085:8085/tcp # SABnzbd (Host-Port 8085, da 8080 schon qBit gehoert - siehe Hinweis unten)
     networks:
       - starr
       - proxy
