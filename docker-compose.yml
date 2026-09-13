@@ -7,16 +7,13 @@ networks:
     external: true
   starr:
     external: true
-  jellystat:
-    external: true
   gluetun_network:
     external: true
-      
-services:
-  # REVERSE PROXY IS IN OTHER DOCKER COMPOSE STACK
 
-  #Jellyfin - used to display the media
-  #This can also be replaced by Emby/Plex
+services:
+  # REVERSE PROXY IST IN ANDEREM DOCKER-COMPOSE-STACK
+
+  #Jellyfin - Medienserver
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
@@ -36,8 +33,8 @@ services:
     networks:
       - proxy
       - starr
-    
-  #Radarr - used to find movies automatically
+
+  #Radarr - Filme automatisch finden
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
@@ -47,7 +44,7 @@ services:
       - TZ=${TZ}
     volumes:
       - ${BASE_PATH}/radarr/config:/config
-      - ${MEDIA_SHARE}:/data #Access to the entire /media
+      - ${MEDIA_SHARE}:/data
     ports:
       - 7878:7878
     networks:
@@ -56,8 +53,8 @@ services:
       gluetun_network:
         ipv4_address: ${RADARR_IPV4}
     restart: unless-stopped
-    
-  #Sonarr - used to find shows automatically
+
+  #Sonarr - Serien automatisch finden
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
@@ -67,7 +64,7 @@ services:
       - TZ=${TZ}
     volumes:
       - ${BASE_PATH}/sonarr/config:/config
-      - ${MEDIA_SHARE}:/data #Access to the entire /media
+      - ${MEDIA_SHARE}:/data
     ports:
       - 8989:8989
     networks:
@@ -76,26 +73,8 @@ services:
       gluetun_network:
         ipv4_address: ${SONARR_IPV4}
     restart: unless-stopped
-  
-  #Readarr - Used to download books
-  readarr:
-    image: ghcr.io/pennydreadful/bookshelf:softcover
-    container_name: readarr
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - ${BASE_PATH}/readarr/config:/config
-      - ${MEDIA_SHARE}:/data
-    ports:
-      - 8787:8787
-    networks:
-      - proxy
-      - starr
-    restart: unless-stopped
-    
-  #Lidarr - Used to download music 
+
+  #Lidarr - Musik automatisch finden
   lidarr:
     image: lscr.io/linuxserver/lidarr:latest
     container_name: lidarr
@@ -113,26 +92,7 @@ services:
       - starr
     restart: unless-stopped
 
-  #Kapowarr - Used to download comics
-  kapowarr:
-    image: 'mrcas/kapowarr:latest'
-    container_name: kapowarr
-    network_mode: "service:gluetun"
-    depends_on:
-      gluetun:
-        condition: service_healthy
-        restart: true
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - ${BASE_PATH}/kapowarr/config:/app/db
-      - ${MEDIA_SHARE}/temp_downloads:/app/temp_downloads
-      - ${MEDIA_SHARE}:/data
-    restart: unless-stopped
-    
-  #Prowlarr - manages your Sonarr, Radarr and download client
+  #Prowlarr - zentrale Indexer-Verwaltung fuer Sonarr/Radarr/Lidarr
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
@@ -148,25 +108,8 @@ services:
     volumes:
       - ${BASE_PATH}/prowlarr/config:/config
     restart: unless-stopped
-    
-  #Autobrr - used to grab torrents using the trackers IRC channel - Increases seeding due to grabbing content before RSS feed
-  autobrr:
-    container_name: autobrr
-    image: ghcr.io/autobrr/autobrr:latest
-    restart: unless-stopped
-    network_mode: "service:gluetun"
-    depends_on:
-      gluetun:
-        condition: service_healthy
-        restart: true
-    environment:
-      - TZ=${TZ}
-      - PUID=${PUID}
-      - PGID=${PGID}
-    volumes:
-      - ${BASE_PATH}/autobrr/config:/config
 
-  #seerr - allows users to request media on their own
+  #seerr - Request-Interface fuer Nutzer
   seerr:
     image: ghcr.io/seerr-team/seerr:latest
     container_name: seerr
@@ -177,7 +120,7 @@ services:
       - TZ=${TZ}
     volumes:
       - ${BASE_PATH}/seerr/config:/app/config
-      - ${MEDIA_SHARE}:/data #Access to the entire ${BASE_PATH}
+      - ${MEDIA_SHARE}:/data
     networks:
       - proxy
       - starr
@@ -190,15 +133,13 @@ services:
       interval: 15s
       retries: 3
     restart: unless-stopped
-    
-  #Byparr - Ersatz für FlareSolverr, um Cloudflare/DDoS-Guard-Schutz zu umgehen.
-  #API-kompatibel zu FlareSolverr (gleicher /v1-Endpunkt, Port 8191), nutzt aber
-  #einen echten Firefox-Browser (Camoufox) statt Chromium/nodriver.
+
+  #Byparr - Cloudflare/DDoS-Guard-Bypass fuer Indexer (FlareSolverr-kompatibel)
   byparr:
     image: ghcr.io/thephaseless/byparr:latest
     container_name: byparr
     network_mode: "service:gluetun"
-    shm_size: "1gb" # verhindert Browser-Abstürze durch /dev/shm-Mangel
+    shm_size: "1gb"
     depends_on:
       gluetun:
         condition: service_healthy
@@ -207,10 +148,8 @@ services:
       - LOG_LEVEL=info
       - TZ=${TZ}
     restart: unless-stopped
-      
-  #Qbittorent - torrenting software
-  #
-  #You can also use RuTorrent, Transmisson or Deluge
+
+  #qBittorrent - Torrent-Downloader
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:libtorrentv1
     container_name: qbittorrent
@@ -224,16 +163,33 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
       - WEBUI_PORT=8080
-      - TORRENTING_PORT=8694 #Make sure to port forward this port in your router so you can seed more effectively
+      - TORRENTING_PORT=8694 #Portweiterleitung im Router noetig fuer besseres Seeding
       - UMASK=002
     volumes:
       - ${BASE_PATH}/qbittorent/config:/config
       - ${MEDIA_SHARE}:/data
     restart: unless-stopped
 
-  #Tdarr - to transcode videos from one format to another like x265 or H.265
-  #
-  #This container requires a decent amount of horse power to run but will save space in the long run
+  #SABnzbd - Usenet-Downloader (NEU)
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK=002
+    volumes:
+      - ${BASE_PATH}/sabnzbd/config:/config
+      - ${MEDIA_SHARE}:/data
+    restart: unless-stopped
+
+  #Tdarr - Video-Transcoding (z.B. nach H.265)
   tdarr:
     container_name: tdarr
     image: ghcr.io/haveagitgat/tdarr:latest
@@ -263,54 +219,33 @@ services:
      - /dev/dri:/dev/dri #Required for HW transcoding /share QuickSync
     networks:
       - proxy
-      
-  #Bazarr - for subtitles. Try to use SRT format if you can rather than PGS due to performance issues
-  bazarr:
-    container_name: bazarr
-    image: lscr.io/linuxserver/bazarr:latest
-    restart: unless-stopped
-    network_mode: "service:gluetun"
-    depends_on:
-      gluetun:
-        condition: service_healthy
-        restart: true
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - ${BASE_PATH}/bazarr/config:/config
-      - ${MEDIA_SHARE}:/data
-      
-  #Cross Seed - used to take torrents from one tracker and seed them on another without leeching first. Increases ratio
-  #
-  #This is fairly advanced but can be removed if you don't think you will need it. Some trackers also don't allow this
-  cross-seed:
-    image: ghcr.io/cross-seed/cross-seed:latest
-    container_name: cross-seed
-    network_mode: "service:gluetun"
-    depends_on:
-      gluetun:
-        condition: service_healthy
-        restart: true
-    user: ${PUID}:${PGID}
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - QBIT_USER=${QBIT_USER}
-      - QBIT_PASS=${QBIT_PASS}
-    volumes:
-      - ${BASE_PATH}/cross-seed/config:/config #To configure you have to manually nano the config file
-      - ${BASE_PATH}/qbittorent/config/qBittorrent/BT_backup:/torrents:ro # your torrent clients .torrent cache, can and should be mounted read-only (e.g. qbit: `BT_Backup` | deluge: `state` | transmission: `transmission/torrents` | rtorrent: session dir from `.rtorrent.rc`)
-      - ${MEDIA_SHARE}/torrents/cross-seed:/data/cross-seeds
-      - ${MEDIA_SHARE}:/data
 
-      # - ${MEDIA_SHARE}/cross-seed/current-cross-seeds:/data/cross-seeds # A place to temp save current cross seed .torrent files
-      #- ${MEDIA_SHARE}/downloads:/data # OPTIONAL!!! this is dataDir path (for data-based matching) - will need to replicate your torrent client's container path (like Arr's do)
-    command: daemon # this enables the search mode, change to daemon to specifically run the daemon
-    
-  #Wizarr - Allows you to create a share link that you can send to users to invite them to your media server
+  #Unpackerr - entpackt Downloads automatisch (wichtig v.a. fuer Usenet-Archive)
+  unpackerr:
+    image: ghcr.io/hotio/unpackerr:latest
+    container_name: unpackerr
+    volumes:
+      - ${MEDIA_SHARE}:/data
+      - ${BASE_PATH}/unpackerr/config:/config
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UN_START_DELAY=1m
+      - UMASK=002
+      - TZ=${TZ}
+      # Sonarr Config
+      - UN_SONARR_0_URL=http://sonarr:8989
+      - UN_SONARR_0_API_KEY=${SONARR_KEY}
+      - UN_SONARR_0_TIMEOUT=10s
+      # Radarr Config
+      - UN_RADARR_0_URL=http://radarr:7878
+      - UN_RADARR_0_API_KEY=${RADARR_KEY}
+      - UN_RADARR_0_TIMEOUT=10s
+    networks:
+      - starr
+
+  #Wizarr - Einladungslinks fuer neue Jellyfin-Nutzer
   wizarr:
     container_name: wizarr
     image: ghcr.io/wizarrrr/wizarr:latest
@@ -324,85 +259,12 @@ services:
       - proxy
       - starr
     environment:
-      - APP_URL=${WIZARR_URL} #URL at which you will access and share 
-      - DISABLE_BUILTIN_AUTH=false #Set to true ONLY if you are using another auth provider (Authelia, Authentik, etc)
-      - TZ=${TZ} #Set your timezone here
-      - PUID=${PUID}
-      - PGID=${PGID}
-      
-  #Dozzle - Used to easily view logs of any container in real time!    
-  dozzle:
-    container_name: dozzle
-    image: amir20/dozzle:latest
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - 9999:8080
-    
-  #Unpacker - Used to unzip zipped files
-  unpackerr:
-    image: ghcr.io/hotio/unpackerr:latest
-    container_name: unpackerr
-    volumes:
-      # You need at least this one volume mapped so Unpackerr can find your files to extract.
-      # Make sure this matches your Starr apps; the folder mount (/downloads or /data) should be identical.
-      - ${MEDIA_SHARE}:/data
-      - ${BASE_PATH}/unpackerr/config:/config
-    restart: unless-stopped
-    # What you see below are defaults for this compose. You only need to modify things specific to your environment.
-    # Remove apps and feature configs you do not use or need. 
-    # ie. Remove all lines that begin with UN_CMDHOOK, UN_WEBHOOK, UN_FOLDER, UN_WEBSERVER, and other apps you do not use.
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - UN_START_DELAY=1m
-      - UMASK=002
+      - APP_URL=${WIZARR_URL}
+      - DISABLE_BUILTIN_AUTH=false
       - TZ=${TZ}
-      #- UN_DEBUG=true
-      # Sonarr Config
-      - UN_SONARR_0_URL=http://sonarr:8989
-      - UN_SONARR_0_API_KEY=${SONARR_KEY}
-      #- UN_SONARR_0_PATHS_0=/${BASE_PATH}/downloads/shows
-      - UN_SONARR_0_TIMEOUT=10s
-      #- UN_SONARR_0_PATHS_0=/${BASE_PATH}/downloads/shows
-      # Radarr Config
-      - UN_RADARR_0_URL=http://radarr:7878
-      - UN_RADARR_0_API_KEY=${RADARR_KEY}
-      #- UN_RADARR_0_PATHS_0=/${BASE_PATH}/downloads/movies
-      - UN_RADARR_0_TIMEOUT=10s
-      #- UN_RADARR_0_PATHS_0=/${BASE_PATH}/downloads/movies
-    networks:
-      - starr
+      - PUID=${PUID}
+      - PGID=${PGID}
 
-  dispatcharr:
-    image: ghcr.io/dispatcharr/dispatcharr:latest
-    container_name: dispatcharr
-    network_mode: "service:gluetun"
-    depends_on:
-      gluetun:
-        condition: service_healthy
-        restart: true
-    volumes:
-      - ${BASE_PATH}/dispatcharr/data:/data
-    environment:
-      - DISPATCHARR_ENV=aio
-      - REDIS_HOST=localhost
-      - CELERY_BROKER_URL=redis://localhost:6379/0
-      - DISPATCHARR_LOG_LEVEL=info
-    # Optional for hardware acceleration
-    devices:
-      - /dev/dri:/dev/dri  # For Intel/AMD GPU acceleration (VA-API)
-    # Uncomment the following lines for NVIDIA GPU support
-    # NVidia GPU support (requires NVIDIA Container Toolkit)
-    #deploy:
-    #  resources:
-    #      reservations:
-    #          devices:
-    #              - driver: nvidia
-    #                count: all
-    #                capabilities: [gpu]
-      
   gluetun:
     image: qmcgaw/gluetun:v3
     healthcheck:
@@ -431,167 +293,20 @@ services:
       - PUBLICIP_API_TOKEN=${PUBLICIP_TOKEN}
       - VPN_PORT_FORWARDING=${VPN_PORT_FORWARDING}
       - VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh -c 'wget -O- --retry-connrefused --post-data "json={\"listen_port\":{{PORT}},\"current_network_interface\":\"{{VPN_INTERFACE}}\",\"random_port\":false,\"upnp\":false}" http://127.0.0.1:8080/api/v2/app/setPreferences 2>&1'
-      - VPN_PORT_FORWARDING_DOWN_COMMAND=/bin/sh -c 'wget -O- --retry-connrefused --post-data "json={\"listen_port\":0,\"current_network_interface\":\"lo"}" http://127.0.0.1:8080/api/v2/app/setPreferences 2>&1'
+      - VPN_PORT_FORWARDING_DOWN_COMMAND=/bin/sh -c 'wget -O- --retry-connrefused --post-data "json={\"listen_port\":0,\"current_network_interface\":\"lo\"}" http://127.0.0.1:8080/api/v2/app/setPreferences 2>&1'
       - UPDATER_PROTONVPN_EMAIL=${UPDATER_PROTONVPN_EMAIL:-}
       - UPDATER_PROTONVPN_PASSWORD=${UPDATER_PROTONVPN_PASSWORD:-}
       - OPENVPN_USER=${OPENVPN_USER:-}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD:-}
     ports:
-      - 2468:2468/tcp # cross-seed
       - 8080:8080/tcp # qBit
       - 8694:8694/tcp # qBit
-      - 5757:5757/tcp # kapowarr
       - 8191:8191/tcp # byparr
       - 9696:9696/tcp # prowlarr
-      - 7474:7474/tcp # autobrr
-      - 9191:9191 # dispatcharr
-      - 6767:6767 # bazarr
+      - 8085:8080/tcp # SABnzbd (Host-Port 8085, da 8080 schon qBit gehoert - siehe Hinweis unten)
     networks:
       - starr
       - proxy
       - gluetun_network
-    # IF VPN CANNOT CONNECT, USE BELOW COMMAND TO UPDATE SERVERS.
+    # FALLS VPN NICHT VERBINDET, BEFEHL UNTEN NUTZEN UM SERVERLISTE ZU AKTUALISIEREN.
     # command: update -enduser -providers ${VPN_SERVICE_PROVIDER:-mullvad}
-
-  homarr:
-    container_name: homarr
-    image: ghcr.io/homarr-labs/homarr:latest
-    restart: unless-stopped
-    environment:
-      - SECRET_ENCRYPTION_KEY=${HOMARR_KEY}
-      - NEXTAUTH_SECRET=${HOMARR_NEXTAUTH_SECRET:-}
-      - AUTH_PROVIDERS=${HOMARR_AUTH_PROVIDERS:-credentials} # To use oidc set this to oidc, if you want a local account backup use 'oidc,credentials'
-      - AUTH_OIDC_ISSUER=${HOMARR_OIDC_ISSUER:-}
-      - AUTH_LOGOUT_REDIRECT_URL=${HOMARR_OIDC_LOGOUT_REDIRECT_URL:-}
-      - AUTH_OIDC_CLIENT_ID=${HOMARR_OIDC_CLIENT_ID:-}
-      - AUTH_OIDC_CLIENT_SECRET=${HOMARR_OIDC_CLIENT_SECRET:-}
-      - AUTH_OIDC_CLIENT_NAME=${HOMARR_OIDC_CLIENT_NAME:-OIDC}
-      - AUTH_OIDC_AUTO_LOGIN=${HOMARR_OIDC_AUTO_LOGIN:-false}
-      - AUTH_OIDC_SCOPE_OVERWRITE=${AUTH_OIDC_SCOPE_OVERWRITE:-openid email profile groups}
-      - AUTH_OIDC_GROUPS_ATTRIBUTE=${HOMARR_OIDC_GROUPS_ATTRIBUTE:-groups}
-      - AUTH_OIDC_NAME_ATTRIBUTE_OVERWRITE=${HOMARR_OIDC_NAME_ATTRIBUTE_OVERWRITE:-}
-      - AUTH_OIDC_FORCE_USERINFO=${HOMARR_OIDC_FORCE_USERINFO:-false}
-      - AUTH_OIDC_ENABLE_DANGEROUS_ACCOUNT_LINKING=${HOMARR_OIDC_ENABLE_DANGEROUS_ACCOUNT_LINKING:-false}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # Optional, only if you want docker integration
-      - ${BASE_PATH}/homarr:/appdata
-    ports:
-      - 7575:7575
-    networks:
-      - proxy
-      - starr
-
-  decluttarr:
-    image: ghcr.io/manimatter/decluttarr:latest
-    container_name: decluttarr
-    restart: unless-stopped
-    environment:
-     TZ: ${TZ}
-     PUID: ${PUID}
-     PGID: ${PGID}
-     ## General
-     # TEST_RUN=True
-     # SSL_VERIFICATION=False
-     LOG_LEVEL: INFO
-     ## Features 
-     TIMER: 10
-     REMOVE_FAILED_DOWNLOADS: True
-     REMOVE_METADATA_MISSING: True
-     REMOVE_MISSING_FILES: True
-     REMOVE_ORPHANS: True
-     REMOVE_SLOW: True
-     REMOVE_STALLED: True
-     REMOVE_UNMONITORED: True
-     SEARCH_MISSING: |
-       min_days_between_searches: 7
-       max_concurrent_searches: 3
-     # Feature Settings
-     MAX_STRIKES: 3
-     PROTECTED_TAG: Don't Kill
-     MIN_SPEED: 100     
-     REMOVE_FAILED_IMPORTS: |
-       message_patterns:
-        - "Not a Custom Format upgrade for existing"
-        - "Not an upgrade for existing"
-     ## Radarr
-     RADARR: >
-        - base_url: "http://radarr:7878"
-          api_key: "$RADARR_KEY"
-     ## Sonarr
-     SONARR: >
-        - base_url: "http://sonarr:8989"
-          api_key: "$SONARR_KEY"
-     ## Lidarr
-     LIDARR: >
-        - base_url: "http://lidarr:8686"
-          api_key: "$LIDARR_KEY"
-     ## Readarr
-     READARR: >
-        - base_url: "http://readarr:8787"
-          api_key: "$READARR_KEY"
-     ## qBitorrent
-     QBITTORRENT: >
-        - base_url: "http://gluetun:8080"
-          username: "$QBIT_USER"
-          password: "$QBIT_PASS"
-    networks:
-      - starr
-      - proxy
-
-  jellystat-db:
-    image: postgres:15.2
-    container_name: jellystat-db
-    environment:
-      POSTGRES_DB: 'jfstat'
-      POSTGRES_USER: ${JELLYSTATDB_USER:-postgres}
-      POSTGRES_PASSWORD: ${JELLYSTATDB_PASS:-password}
-    volumes:
-      - ${BASE_PATH}/jellystat/postgres-data:/var/lib/postgresql/data # Mounting the volume
-    restart: unless-stopped
-    networks:
-      - jellystat
-
-  jellystat:
-    image: cyfershepard/jellystat:latest
-    container_name: jellystat
-    environment:
-      POSTGRES_USER: ${JELLYSTATDB_USER:-postgres}
-      POSTGRES_PASSWORD: ${JELLYSTATDB_PASS:-password}
-      POSTGRES_IP: jellystat-db
-      POSTGRES_PORT: 5432
-      JWT_SECRET: ${JWT_SECRET:-'my-secret-jwt-key'}
-    ports:
-      - 3000:3000 #Server Port
-    volumes:
-      - ${BASE_PATH}/jellystat/postgres-backup:/app/backend/backup-data # Mounting the volume
-    depends_on:
-      - jellystat-db
-    restart: unless-stopped
-    networks:
-      - jellystat
-      - proxy
-      - starr
-  
-  janitorr:
-    container_name: janitorr
-    image: ghcr.io/schaka/janitorr:jvm-stable
-    user: ${PUID}:${PGID}
-    volumes:
-      - ${BASE_PATH}/janitorr/application.yml:/workspace/application.yml
-      - ${BASE_PATH}/janitorr/logs:/logs
-      - ${MEDIA_SHARE}:/data
-    networks:
-      - starr
-
-  profilarr:
-    image: santiagosayshey/profilarr:latest
-    container_name: profilarr
-    ports:
-      - 6868:6868
-    volumes:
-      - ${BASE_PATH}/profilarr:/config
-    environment:
-      - TZ=${TZ} # Set your timezone
-    restart: unless-stopped
-    networks:
-      - starr
